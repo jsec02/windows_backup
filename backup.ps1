@@ -24,6 +24,18 @@ function Get-BackupStats {
     }
 }
 
+function Invoke-ResticBackup {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Tag,
+
+        [Parameter(Mandatory=$true)]
+        [string[]]$Paths
+    )
+
+    Write-Host "$Tag $Paths From Invoke-ResticBackup"
+}
+
 function Backup-Targets {
     param(
         [Parameter(Mandatory=$true)]
@@ -50,18 +62,6 @@ function Backup-Targets {
         $Paths = $Parts[1..($Parts.Length -1)]
         Invoke-ResticBackup -Tag $Tag -Paths $Paths
     }
-}
-
-function Invoke-ResticBackup {
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]$Tag,
-
-        [Parameter(Mandatory=$true)]
-        [string[]]$Paths
-    )
-
-    Write-Host "$Tag $Paths From Invoke-ResticBackup"
 }
 
 function Invoke-Main {

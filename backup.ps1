@@ -2,10 +2,6 @@
 # =                                    BACKUP                                    =
 # ================================================================================
 
-param (
-    [string]$Action
-)
-
 function Get-BackupIntegrity {
     param (
         [Parameter(Mandatory=$true)]
@@ -28,22 +24,70 @@ function Get-BackupStats {
     }
 }
 
-function Main {
-    $Repositories = @($Env:R1, $Env:R2)
+function Backup-Targets {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Hostname,
 
-    switch ($Action.ToLower()) {
+        [string[]]$Targets
+    )
+
+    $Arguments = @('paths', $Hostname)
+
+    if ($Targets) {
+        $Arguments += $Targets
+    }
+
+    $Output = python "$HOME/parsers/inventory.py" $Arguments
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Inventory lookup failed"
+    }
+
+    foreach ($Line in $Output) {
+        $Parts = $Line -split ' '
+        $Tag = $Parts[0]
+        $Paths = $Parts[1..($Parts.Length -1)]
+        Invoke-ResticBackup -Tag $Tag -Paths $Paths
+    }
+}
+
+function Invoke-ResticBackup {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Tag,
+
+        [Parameter(Mandatory=$true)]
+        [string[]]$Paths
+    )
+
+    Write-Host "$Tag $Paths From Invoke-ResticBackup"
+}
+
+function Invoke-Main {
+    param(
+        [string[]]$Arguments
+    )
+
+    $Repositories = @($Env:R1, $Env:R2)
+    
+    $Hostname = $Env:COMPUTERNAME.ToLowerInvariant()
+
+    if ($Arguments) {
+        $Arguments = $Arguments.ToLowerInvariant()
+    }
+
+    switch ($Arguments[0]) {
         "integrity" {
-            Get-BackupIntegrity $Repositories
+            Get-BackupIntegrity -Repositories $Repositories
         }
         "stats" {
-            Get-BackupStats $Repositories
+            Get-BackupStats -Repositories $Repositories
         }
         default {
-            Write-Host "Did not chose anything"
+            Backup-Targets -Hostname $Hostname -Targets $Arguments
         }
     }
 }
 
-Main
-
-# python "$HOME/parsers/inventory.py" paths windows
+Invoke-Main -Arguments $Args

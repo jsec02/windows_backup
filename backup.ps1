@@ -30,10 +30,34 @@ function Invoke-ResticBackup {
         [string]$Tag,
 
         [Parameter(Mandatory=$true)]
-        [string[]]$Paths
+        [string[]]$Paths,
+
+        [Parameter(Mandatory=$true)]
+        [string]$Hostname,
+
+        [Parameter(Mandatory=$true)]
+        [string[]]$Repositories
     )
 
-    Write-Host "$Tag $Paths From Invoke-ResticBackup"
+    $ValidatedPaths = @()
+
+    foreach ($Path in $Paths) {
+        # If path exists on system, append to paths array
+        if (Test-Path -Path $Path) {
+            $ValidatedPaths += $Path
+        }
+    }
+
+    # If paths array is empty, return early
+    if ($ValidatedPaths.Count -eq 0) {
+        return
+    }
+
+    foreach ($Repository in $Repositories) {
+        restic --repo $Repository backup $ValidatedPaths --tag $Tag
+        # Group by tags and hosts to prevent path changes from creating orphaned snapshots
+        restic --repo $Repository forget --tag $Tag --host $Hostname --keep-last 7 --group-by tags,hosts --prune
+    }
 }
 
 function Backup-Targets {
@@ -41,7 +65,10 @@ function Backup-Targets {
         [Parameter(Mandatory=$true)]
         [string]$Hostname,
 
-        [string[]]$Targets
+        [string[]]$Targets,
+
+        [Parameter(Mandatory=$true)]
+        [string[]]$Repositories
     )
 
     $Arguments = @('paths', $Hostname)
@@ -60,7 +87,7 @@ function Backup-Targets {
         $Parts = $Line -split ' '
         $Tag = $Parts[0]
         $Paths = $Parts[1..($Parts.Length -1)]
-        Invoke-ResticBackup -Tag $Tag -Paths $Paths
+        Invoke-ResticBackup -Tag $Tag -Paths $Paths -Hostname $Hostname -Repositories $Repositories
     }
 }
 
@@ -85,7 +112,7 @@ function Invoke-Main {
             Get-BackupStats -Repositories $Repositories
         }
         default {
-            Backup-Targets -Hostname $Hostname -Targets $Arguments
+            Backup-Targets -Hostname $Hostname -Targets $Arguments -Repositories $Repositories
         }
     }
 }

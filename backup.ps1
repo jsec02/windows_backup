@@ -77,7 +77,7 @@ function Backup-Targets {
         $Arguments += $Targets
     }
 
-    $Output = python "$HOME/parsers/inventory.py" $Arguments
+    $Output = python "$HOME\parsers\inventory.py" $Arguments
 
     if ($LASTEXITCODE -ne 0) {
         throw "Inventory lookup failed"

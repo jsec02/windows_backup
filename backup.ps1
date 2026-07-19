@@ -55,8 +55,8 @@ function Invoke-ResticBackup {
 
     foreach ($Repository in $Repositories) {
         restic --repo $Repository backup $ValidatedPaths --tag $Tag
-        # Group by tags and hosts to prevent path changes from creating orphaned snapshots
-        restic --repo $Repository forget --tag $Tag --host $Hostname --keep-last 7 --group-by tags,hosts --prune
+        # Group by hosts and tags to prevent path changes from creating orphaned snapshots
+        restic --repo $Repository forget--host $Hostname --tag $Tag --keep-last 7 --group-by hosts,tags --prune
     }
 }
 

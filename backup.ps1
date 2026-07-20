@@ -84,9 +84,10 @@ function Backup-Targets {
     }
 
     foreach ($Line in $Output) {
+        # Ignore $Parts[0], the sudo flag is not needed on windows
         $Parts = $Line -split ' '
-        $Tag = $Parts[0]
-        $Paths = $Parts[1..($Parts.Length -1)]
+        $Tag = $Parts[1]
+        $Paths = $Parts[2..($Parts.Length -1)]
         Invoke-ResticBackup -Tag $Tag -Paths $Paths -Hostname $Hostname -Repositories $Repositories
     }
 }

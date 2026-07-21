@@ -56,7 +56,7 @@ function Invoke-ResticBackup {
     foreach ($Repository in $Repositories) {
         restic --repo $Repository backup $ValidatedPaths --tag $Tag
         # Group by hosts and tags to prevent path changes from creating orphaned snapshots
-        restic --repo $Repository forget--host $Hostname --tag $Tag --keep-last 7 --group-by hosts,tags --prune
+        restic --repo $Repository forget --host $Hostname --tag $Tag --keep-last 7 --group-by hosts,tags --prune
     }
 }
 
@@ -97,7 +97,8 @@ function Invoke-Main {
         [string[]]$Arguments
     )
 
-    $Repositories = @($Env:R1, $Env:R2)
+    # $Repositories = @($Env:R1, $Env:R2)
+    $Repositories = @($Env:R1)
     
     $Hostname = $Env:COMPUTERNAME.ToLowerInvariant()
 

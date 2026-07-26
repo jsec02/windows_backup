@@ -27,16 +27,17 @@ function Get-BackupStats {
 function Invoke-ResticBackup {
     param(
         [Parameter(Mandatory=$true)]
-        [string]$Tag,
-
-        [Parameter(Mandatory=$true)]
-        [string[]]$Paths,
-
-        [Parameter(Mandatory=$true)]
         [string]$Hostname,
 
         [Parameter(Mandatory=$true)]
-        [string[]]$Repositories
+        [string[]]$Repositories,
+
+        [Parameter(Mandatory=$true)]
+        [string]$Tag,
+
+        [Parameter(Mandatory=$true)]
+        [string[]]$Paths
+
     )
 
     $ValidatedPaths = @()
@@ -65,10 +66,11 @@ function Backup-Targets {
         [Parameter(Mandatory=$true)]
         [string]$Hostname,
 
-        [string[]]$Targets,
-
         [Parameter(Mandatory=$true)]
-        [string[]]$Repositories
+        [string[]]$Repositories,
+
+        [string[]]$Targets
+
     )
 
     $Arguments = @('paths', $Hostname)
@@ -88,7 +90,7 @@ function Backup-Targets {
         $Parts = $Line -split ' '
         $Tag = $Parts[1]
         $Paths = $Parts[2..($Parts.Length -1)]
-        Invoke-ResticBackup -Tag $Tag -Paths $Paths -Hostname $Hostname -Repositories $Repositories
+        Invoke-ResticBackup -Hostname $Hostname -Repositories $Repositories -Tag $Tag -Paths $Paths 
     }
 }
 
@@ -97,8 +99,7 @@ function Invoke-Main {
         [string[]]$Arguments
     )
 
-    # $Repositories = @($Env:R1, $Env:R2)
-    $Repositories = @($Env:R1)
+    $Repositories = @($Env:R1, $Env:R2)
     
     $Hostname = $Env:COMPUTERNAME.ToLowerInvariant()
 
@@ -114,7 +115,7 @@ function Invoke-Main {
             Get-BackupStats -Repositories $Repositories
         }
         default {
-            Backup-Targets -Hostname $Hostname -Targets $Arguments -Repositories $Repositories
+            Backup-Targets -Hostname $Hostname -Repositories $Repositories -Targets $Arguments 
         }
     }
 }

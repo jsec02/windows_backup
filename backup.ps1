@@ -2,6 +2,8 @@
 # =                                    BACKUP                                    =
 # ================================================================================
 
+Set-StrictMode -Version Latest
+
 function Get-BackupIntegrity {
     param (
         [Parameter(Mandatory=$true)]

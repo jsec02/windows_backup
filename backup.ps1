@@ -2,9 +2,22 @@
 # =                                    BACKUP                                    =
 # ================================================================================
 
+[CmdletBinding(DefaultParameterSetName = 'Backup')]
+param(
+    [Parameter(ParameterSetName = 'Backup')]
+    [string[]]$Targets,
+
+    [Parameter(ParameterSetName = 'Integrity')]
+    [switch]$Integrity,
+
+    [Parameter(ParameterSetName = 'Stats')]
+    [switch]$Stats
+)
+
 Set-StrictMode -Version Latest
 
 function Get-BackupIntegrity {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
         [array]$Repositories
@@ -16,6 +29,7 @@ function Get-BackupIntegrity {
 }
 
 function Get-BackupStats {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]
         [array]$Repositories
@@ -27,6 +41,7 @@ function Get-BackupStats {
 }
 
 function Invoke-ResticBackup {
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
         [string]$Hostname,
@@ -39,7 +54,6 @@ function Invoke-ResticBackup {
 
         [Parameter(Mandatory=$true)]
         [string[]]$Paths
-
     )
 
     $ValidatedPaths = @()
@@ -63,7 +77,8 @@ function Invoke-ResticBackup {
     }
 }
 
-function Backup-Targets {
+function Invoke-Backup {
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
         [string]$Hostname,
@@ -72,7 +87,6 @@ function Backup-Targets {
         [string[]]$Repositories,
 
         [string[]]$Targets
-
     )
 
     $Arguments = @('paths', $Hostname)
@@ -91,35 +105,39 @@ function Backup-Targets {
         # Ignore $Parts[0], the sudo flag is not needed on windows
         $Parts = $Line -split ' '
         $Tag = $Parts[1]
-        $Paths = $Parts[2..($Parts.Length -1)]
-        Invoke-ResticBackup -Hostname $Hostname -Repositories $Repositories -Tag $Tag -Paths $Paths 
+        $Paths = $Parts[2..($Parts.Length - 1)]
+        Invoke-ResticBackup -Hostname $Hostname -Repositories $Repositories -Tag $Tag -Paths $Paths
     }
 }
 
 function Invoke-Main {
+    [CmdletBinding()]
     param(
-        [string[]]$Arguments
+        [Parameter(Mandatory=$true)]
+        [string]$Mode,
+
+        [string[]]$Targets
     )
 
     $Repositories = @($Env:R1, $Env:R2)
-    
+
     $Hostname = $Env:COMPUTERNAME.ToLowerInvariant()
 
-    if ($Arguments) {
-        $Arguments = $Arguments.ToLowerInvariant()
+    if ($Targets) {
+        $Targets = $Targets.ToLowerInvariant()
     }
 
-    switch ($Arguments[0]) {
-        "integrity" {
+    switch ($Mode) {
+        'Integrity' {
             Get-BackupIntegrity -Repositories $Repositories
         }
-        "stats" {
+        'Stats' {
             Get-BackupStats -Repositories $Repositories
         }
-        default {
-            Backup-Targets -Hostname $Hostname -Repositories $Repositories -Targets $Arguments 
+        'Backup' {
+            Invoke-Backup -Hostname $Hostname -Repositories $Repositories -Targets $Targets
         }
     }
 }
 
-Invoke-Main -Arguments $Args
+Invoke-Main -Mode $PSCmdlet.ParameterSetName -Targets $Targets
